@@ -10,25 +10,34 @@
  */
 add_action( 'admin_init','style_call');
 
+/**
+ * Add admin page styling for upload form.
+*/
 function style_call() {
     wp_register_style('stylesheet', plugins_url('style.css',__FILE__ ));
     wp_enqueue_style('stylesheet');
 } 
 
-
+/**
+ * Add admin menu for uploading JSON data.
+*/
 add_action('admin_menu', 'fb2wp_plugin_menu');
 function fb2wp_plugin_menu() {
 	add_menu_page('Import Facebook Post', 'Import Facebook Post', 'administrator', 'import-facebook-post', 'fb2wp_import_facebook_post');
 
 }
 
+/**
+ * Query posts to check if a post already exists with the facebook id from JSON data.
+ * This will avoid duplicate posts if admin is uploading same file again.
+*/
 function fb2wp_post_exists ($fb_id) {
   $post_args = array(
   	'post_type' => 'post',
 	'posts_per_page' => -1,
 	'meta_query' => array(
 		array(
-			'key' => 'facebook_id',
+			'key' => 'facebook_id', // Checking against saved fb id with last uploaded posts.
 			'value' => $fb_id
 		)
 	)
@@ -36,7 +45,7 @@ function fb2wp_post_exists ($fb_id) {
  
   $post_query = new WP_Query( $post_args );
 
-  if($post_query->have_posts()) {
+  if($post_query->have_posts()) { // If query returns any data
   	return true;
   }
   else {
@@ -44,6 +53,9 @@ function fb2wp_post_exists ($fb_id) {
   }
 }
 
+/**
+ * Check if the file url in FB data is a valid image or not.
+*/
 function fb2wp_is_image($path) {
   $a = getimagesize($path);
   $image_type = $a[2];
@@ -55,6 +67,9 @@ function fb2wp_is_image($path) {
   return false;
 }
 
+/**
+ * Importing data from JSON as WP posts.
+*/
 function fb2wp_import_posts ($data) {
   $arr = json_decode($data); // json decode 
   $count = 0;
@@ -92,7 +107,7 @@ function fb2wp_import_posts ($data) {
 	  $post_id = wp_insert_post($args); //import data to posts
 	  /* uploading base 64 image in wordpress and then attach post id to specific post */
 
-	  if ($valid_image) {
+	  if ($valid_image) {// Only upload image if the data has a valid image
 		  $directory = "/".date(Y)."/".date(m)."/";
 		  $wp_upload_dir = wp_upload_dir();
 		  $image_data = base64_decode($b64image);
@@ -118,8 +133,8 @@ function fb2wp_import_posts ($data) {
 		
 		  set_post_thumbnail($post_id,$attach_id);  //save to specific post 
 	  }
-	  add_post_meta($post_id, 'facebook_id',$facebook_id); //add facebook id in wp_postmeta
-	  add_post_meta($post_id, 'read_more',$link);  //add  link in wp_postmeta
+	  add_post_meta($post_id, 'facebook_id',$facebook_id); //add facebook id in wp_postmeta for duplicate checks
+	  add_post_meta($post_id, 'read_more',$link);  //add  link in wp_postmeta for Read more link in template
 	
 	  $count++;
     }
@@ -128,7 +143,9 @@ function fb2wp_import_posts ($data) {
   return $count;
 }
 
-
+/**
+ * Form handler for JSON upload.
+*/
 function fb2wp_import_facebook_post() { 
 if (isset($_FILES['json_file'])){
 	$allowed =  array('json');
