@@ -111,7 +111,7 @@ function fb2wp_import_posts ($data) {
 		  $directory = "/".date(Y)."/".date(m)."/";
 		  $wp_upload_dir = wp_upload_dir();
 		  $image_data = base64_decode($b64image);
-		  $filename = "IMG_".$final_arr->created_time.".".$upload_file_ext;
+		  $filename = "IMG_".$final_arr->id.".".$upload_file_ext;
 		  $fileurl = "../wp-content/uploads".$directory.$filename;
 
 		  $filetype = wp_check_filetype( basename( $fileurl), null );
